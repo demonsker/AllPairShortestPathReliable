@@ -94,7 +94,14 @@ void fix_path(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE],
 
 	//Reliable : fix direct edge
 	//assume select k = 3
-	int newpath = allpath[3][u][v];
+	int k = 0;
+	for (int i = SIZE - 1; i > 0; i--)
+		if (allpath[i][u][v] != path[u][v])
+		{
+			k = i;
+			break;
+		}
+	int newpath = allpath[k][u][v];
 	path[u][v] = newpath;
 	distance[u][v] = distance[u][newpath] + distance[newpath][v];
 
