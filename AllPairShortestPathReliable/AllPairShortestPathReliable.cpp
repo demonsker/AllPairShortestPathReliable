@@ -8,12 +8,13 @@
 #define SIZE 8
 
 void distance_generate(int[][SIZE]);
-void distance_useexample(int[][SIZE]);
-void find_AllPairShortestPath(int[][SIZE], int[][SIZE], int[][SIZE][SIZE]);
+void distance_useexample(int[][SIZE], int[][SIZE][SIZE]);
+void find_AllPairShortestPath(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int[][SIZE][SIZE]);
 void array_print(int[][SIZE]);
 void log_save(float);
 void find_path(int[][SIZE], int, int);
 void fix_path(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int u, int v);
+void fix_path_2(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int[][SIZE][SIZE], int u, int v);
 
 int main()
 {
@@ -24,12 +25,13 @@ int main()
 	int i, j, k;
 
 	//declare distance and path
-	int(*distance)[SIZE], (*path)[SIZE];
+	int (*distance)[SIZE], (*path)[SIZE];
 	distance = (int(*)[SIZE]) malloc(SIZE * sizeof(int[SIZE]));
 	path = (int(*)[SIZE]) malloc(SIZE * sizeof(int[SIZE]));
 
 	//Reliable : Integer structure
-	int(*allpath)[SIZE][SIZE];
+	int(*alldistance)[SIZE][SIZE], (*allpath)[SIZE][SIZE];
+	alldistance = (int(*)[SIZE][SIZE]) malloc(SIZE * sizeof(int[SIZE][SIZE]));
 	allpath = (int(*)[SIZE][SIZE]) malloc(SIZE * sizeof(int[SIZE][SIZE]));
 	for (i = 0; i < SIZE; i++)
 		for (j = 0; j < SIZE; j++)
@@ -44,11 +46,11 @@ int main()
 	}
 
 	//generate data
-	distance_useexample(distance);
+	distance_useexample(distance, alldistance);
 	//distance_generate(distance);
 
 	//Find Shortest Path
-	find_AllPairShortestPath(distance, path, allpath);
+	find_AllPairShortestPath(distance, path, allpath, alldistance);
 
 	end = clock();
 
@@ -64,7 +66,7 @@ int main()
 
 	//Reliable
 	//Before Broke
-	printf("Before broke\n");
+	/*printf("Before broke\n");
 	find_path(path, 1, 7);
 	printf(" distace : %d\n", distance[1][7]);
 	//Fix
@@ -75,7 +77,7 @@ int main()
 	//Edge Relate
 	printf("\nOther Relate\n");
 	find_path(path, 0, 7);
-	printf(" distace : %d\n", distance[0][7]);
+	printf(" distace : %d\n", distance[0][7]);*/
 
 	/*
 	float diff = ((float)(end - start) / 1000000.0F) * 1000;
@@ -87,6 +89,50 @@ int main()
 	getchar();
 
 	return 0;
+}
+
+void fix_path_2(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int alldistance[][SIZE][SIZE], int u, int v)
+{
+	//Copy colum v from k = u to u+1
+	for (int j = 0; j < SIZE; j++)
+	{
+		alldistance[u][j][v] = alldistance[u-1][j][v];
+		allpath[u][j][v] = allpath[u-1][j][v];
+	}
+	
+	//Clear old distance and path
+	for (int i = 0; i < SIZE; i++)
+	{
+		for (int j = 0; j < SIZE; j++)
+		{
+			for (int k = u; k < SIZE; k++)
+			{
+				alldistance[k][i][j] = alldistance[k][i][j];
+				allpath[k][i][j] = allpath[k][i][j];
+			}
+		}
+	}
+	
+	//Begin calculate at k = u+1
+	for (int k = u+1; k < SIZE; k++)
+	{
+		for (int i = 0; i < SIZE; i++)
+		{
+			for (int j = 0; j < SIZE; j++)
+			{
+				int new_weight = alldistance[k][i][k] + alldistance[k][k][j];
+
+				if (new_weight < alldistance[k][i][j])
+				{
+					for (int r = k; r < SIZE; r++)
+					{
+						allpath[r][i][j] = allpath[r][i][k];
+						alldistance[r][i][j] = new_weight;
+					}
+				}
+			}
+		}
+	}
 }
 
 void fix_path(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int u, int v)
@@ -115,7 +161,7 @@ void fix_path(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE],
 		}
 }
 
-void find_AllPairShortestPath(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE])
+void find_AllPairShortestPath(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int alldistance[][SIZE][SIZE])
 {
 	for (int k = 0; k < SIZE; k++)
 	{
@@ -130,9 +176,12 @@ void find_AllPairShortestPath(int distance[][SIZE], int path[][SIZE], int allpat
 					distance[i][j] = new_weight;
 					path[i][j] = path[i][k];
 
-					//Method 2 : Integer structure
+					//Reliable : Integer structure
 					for (int r = k; r < SIZE; r++)
+					{
 						allpath[r][i][j] = allpath[r][i][k];
+						alldistance[r][i][j] = new_weight;
+					}
 				}
 			}
 		}
@@ -173,7 +222,7 @@ void array_print(int distance[][SIZE])
 	}
 }
 
-void distance_useexample(int data[][SIZE])
+void distance_useexample(int data[][SIZE], int alldata[][SIZE][SIZE])
 {
 	int example[8][8] = {
 		{ 0,1,9,3,INF,INF,INF,INF },
@@ -186,13 +235,15 @@ void distance_useexample(int data[][SIZE])
 		{ INF,INF,INF,8,1,INF,4,0 }
 	};
 
-	int i, j;
+	int i, j, k;
 
 	for (i = 0; i < SIZE; i++)
 	{
 		for (j = 0; j < SIZE; j++)
 		{
 			data[i][j] = example[i][j];
+			for (int k = 0; k < SIZE; k++)
+				alldata[k][i][j] = example[i][j];
 		}
 	}
 }
