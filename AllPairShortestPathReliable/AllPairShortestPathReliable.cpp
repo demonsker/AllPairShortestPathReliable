@@ -8,13 +8,13 @@
 #define SIZE 8
 
 void distance_generate(int[][SIZE]);
-void distance_useexample(int[][SIZE], int[][SIZE][SIZE]);
-void find_AllPairShortestPath(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int[][SIZE][SIZE]);
+void distance_useexample(int[][SIZE]);
+void find_AllPairShortestPath(int[][SIZE][SIZE], int[][SIZE][SIZE]);
+void array_copy(int[][SIZE], int[][SIZE]);
 void array_print(int[][SIZE]);
 void log_save(float);
 void find_path(int[][SIZE], int, int);
-void fix_path(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int u, int v);
-void fix_path_2(int[][SIZE], int[][SIZE], int[][SIZE][SIZE], int[][SIZE][SIZE], int u, int v);
+void fix_path(int[][SIZE][SIZE], int[][SIZE][SIZE], int u, int v);
 
 int main()
 {
@@ -22,99 +22,97 @@ int main()
 
 	start = clock();
 
-	int i, j, k;
+	int i, j;
 
-	//declare distance and path
-	int (*distance)[SIZE], (*path)[SIZE];
-	distance = (int(*)[SIZE]) malloc(SIZE * sizeof(int[SIZE]));
-	path = (int(*)[SIZE]) malloc(SIZE * sizeof(int[SIZE]));
-
-	//Reliable : Integer structure
-	int(*alldistance)[SIZE][SIZE], (*allpath)[SIZE][SIZE];
+	int (*alldistance)[SIZE][SIZE], (*allpath)[SIZE][SIZE];
 	alldistance = (int(*)[SIZE][SIZE]) malloc(SIZE * sizeof(int[SIZE][SIZE]));
 	allpath = (int(*)[SIZE][SIZE]) malloc(SIZE * sizeof(int[SIZE][SIZE]));
+
+	//Initial path
 	for (i = 0; i < SIZE; i++)
 		for (j = 0; j < SIZE; j++)
-			for (k = 0; k < SIZE; k++)
-				allpath[k][i][j] = j;
-
-	//Initial Path
-	for (i = 0; i < SIZE; i++) {
-		for (j = 0; j < SIZE; j++) {
-			path[i][j] = j;
-		}
-	}
+				allpath[0][i][j] = j;
 
 	//generate data
-	distance_useexample(distance, alldistance);
+	distance_useexample(alldistance[0]);
+	//alldistance[0][1][5] = INF;
 	//distance_generate(distance);
 
 	//Find Shortest Path
-	find_AllPairShortestPath(distance, path, allpath, alldistance);
+	find_AllPairShortestPath(alldistance, allpath);
 
 	end = clock();
 
+	//fix_path(alldistance, allpath, 1 ,5);
+
 	//Print ShortestDistance
-	/*printf("Shortest Distance\n");
-	array_print(distance);
-	printf("\n");*/
+	printf("Shortest Distance\n");
+	array_print(alldistance[SIZE-1]);
+	printf("\n");
 
 	//Print ShortestPath
-	/*printf("Shortest Path\n");
-	array_print(path);
-	printf("\n");*/
+	printf("Shortest Path\n");
+	array_print(allpath[SIZE-1]);
+	printf("\n");
 
-	//Reliable
-	//Before Broke
-	/*printf("Before broke\n");
-	find_path(path, 1, 7);
-	printf(" distace : %d\n", distance[1][7]);
-	//Fix
-	fix_path(distance, path, allpath, 1, 7);
-	printf("\nAfter Fix\n");
-	find_path(path, 1, 7);
-	printf(" distace : %d\n", distance[1][7]);
-	//Edge Relate
-	printf("\nOther Relate\n");
-	find_path(path, 0, 7);
-	printf(" distace : %d\n", distance[0][7]);*/
+	//find path
+	//find_path(allpath[SIZE-1], 1, 6);
 
-	/*
+
 	float diff = ((float)(end - start) / 1000000.0F) * 1000;
 	printf("%.4f\n", diff);
 
-	log_save(diff);
-	*/
+	//log_save(diff);
+	
 
 	getchar();
 
 	return 0;
 }
 
-void fix_path_2(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int alldistance[][SIZE][SIZE], int u, int v)
+void fix_path(int alldistance[][SIZE][SIZE], int allpath[][SIZE][SIZE], int u, int v)
 {
-	//Copy colum v from k = u to u+1
-	for (int j = 0; j < SIZE; j++)
+	//mark a broken edge 
+	alldistance[0][u][v] = INF;
+
+	//useless edge
+	if (allpath[SIZE-1][u][v] != v)
 	{
-		alldistance[u][j][v] = alldistance[u-1][j][v];
-		allpath[u][j][v] = allpath[u-1][j][v];
+		printf("This edge is useless\n");
+		return;
 	}
-	
-	//Clear old distance and path
+
+	//re-calculate : edge broke at node 0
+	if (u == 0)
+	{
+		printf("Re-Calculate\n");
+		find_AllPairShortestPath(alldistance, allpath);
+		return;
+	}	
+
+	//find new shortest path when pass k = 0 to k < u
+	for (int k = 0; k < u; k++)
+	{
+		int new_weight = alldistance[k][u][k] + alldistance[k][k][v];
+
+		if (new_weight < alldistance[k][u][v])
+		{
+				alldistance[k][u][v] = new_weight;
+				allpath[k][u][v] = allpath[k][u][k];
+		}
+		alldistance[k+1][u][v] = alldistance[k][u][v];
+		allpath[k+1][u][v] = allpath[k][u][v];
+	}
+
+	//Copy colum v from k = u-1 to u
 	for (int i = 0; i < SIZE; i++)
 	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			for (int k = u; k < SIZE; k++)
-			{
-				alldistance[k][i][j] = alldistance[k][i][j];
-				allpath[k][i][j] = allpath[k][i][j];
-			}
-		}
+		alldistance[u][i][v] = alldistance[u-1][i][v];
+		allpath[u][i][v] = allpath[u-1][i][v];
 	}
-	
-	//Begin calculate at k = u+1
-	for (int k = u+1; k < SIZE; k++)
+
+	//Begin calculate at k = u
+	for (int k = u; k < SIZE; k++)
 	{
 		for (int i = 0; i < SIZE; i++)
 		{
@@ -122,46 +120,25 @@ void fix_path_2(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE
 			{
 				int new_weight = alldistance[k][i][k] + alldistance[k][k][j];
 
-				if (new_weight < alldistance[k][i][j])
+				if (new_weight <  alldistance[k][i][j])
 				{
-					for (int r = k; r < SIZE; r++)
-					{
-						allpath[r][i][j] = allpath[r][i][k];
-						alldistance[r][i][j] = new_weight;
-					}
+					allpath[k][i][j] = allpath[k][i][k];
+					alldistance[k][i][j] = new_weight;
 				}
 			}
 		}
+		if (k + 1 < SIZE)
+		{
+			array_copy(alldistance[k], alldistance[k + 1]);
+			array_copy(allpath[k], allpath[k + 1]);
+		}
+		/*printf("k = %d\n", k);
+		array_print(alldistance[k]);
+		printf("\n");*/
 	}
 }
 
-void fix_path(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int u, int v)
-{
-
-	//Reliable : fix direct edge
-	//assume select k = 3
-	int k = 0;
-	for (int i = SIZE - 1; i > 0; i--)
-		if (allpath[i][u][v] != path[u][v])
-		{
-			k = i;
-			break;
-		}
-	int newpath = allpath[k][u][v];
-	path[u][v] = newpath;
-	distance[u][v] = distance[u][newpath] + distance[newpath][v];
-
-	//TODO fix all path that use this edge : O(n)
-	//update other edge that use this edge
-	for (int s = 0; s < SIZE; s++)
-		if (path[s][v] == u)
-		{
-			distance[s][v] = distance[s][u] + distance[u][v];
-			fix_path(distance, path, allpath, s, v);
-		}
-}
-
-void find_AllPairShortestPath(int distance[][SIZE], int path[][SIZE], int allpath[][SIZE][SIZE], int alldistance[][SIZE][SIZE])
+void find_AllPairShortestPath(int alldistance[][SIZE][SIZE], int allpath[][SIZE][SIZE])
 {
 	for (int k = 0; k < SIZE; k++)
 	{
@@ -169,22 +146,24 @@ void find_AllPairShortestPath(int distance[][SIZE], int path[][SIZE], int allpat
 		{
 			for (int j = 0; j < SIZE; j++)
 			{
-				int new_weight = distance[i][k] + distance[k][j];
+				int new_weight = alldistance[k][i][k] + alldistance[k][k][j];
 
-				if (new_weight < distance[i][j])
+				if (new_weight <  alldistance[k][i][j])
 				{
-					distance[i][j] = new_weight;
-					path[i][j] = path[i][k];
-
-					//Reliable : Integer structure
-					for (int r = k; r < SIZE; r++)
-					{
-						allpath[r][i][j] = allpath[r][i][k];
-						alldistance[r][i][j] = new_weight;
-					}
+					allpath[k][i][j] = allpath[k][i][k];
+					alldistance[k][i][j] = new_weight;
 				}
 			}
 		}
+
+		if (k + 1 < SIZE)
+		{
+			array_copy(alldistance[k], alldistance[k + 1]);
+			array_copy(allpath[k], allpath[k + 1]);
+		}
+		printf("k = %d\n", k);
+		array_print(alldistance[k]);
+		printf("\n");
 	}
 }
 
@@ -207,22 +186,32 @@ void distance_generate(int data[][SIZE])
 	}
 }
 
-void array_print(int distance[][SIZE])
+void array_copy(int sour[][SIZE], int dest[][SIZE])
 {
 	for (int i = 0; i < SIZE; ++i)
 	{
 		for (int j = 0; j < SIZE; ++j)
 		{
-			if (distance[i][j] == INF)
+			dest[i][j] = sour[i][j];
+		}
+	}
+}
+void array_print(int data[][SIZE])
+{
+	for (int i = 0; i < SIZE; ++i)
+	{
+		for (int j = 0; j < SIZE; ++j)
+		{
+			if (data[i][j] == INF)
 				printf("%7s", "INF");
 			else
-				printf("%7d", distance[i][j]);
+				printf("%7d", data[i][j]);
 		}
 		printf("\n");
 	}
 }
 
-void distance_useexample(int data[][SIZE], int alldata[][SIZE][SIZE])
+void distance_useexample(int alldata[][SIZE])
 {
 	int example[8][8] = {
 		{ 0,1,9,3,INF,INF,INF,INF },
@@ -241,9 +230,7 @@ void distance_useexample(int data[][SIZE], int alldata[][SIZE][SIZE])
 	{
 		for (j = 0; j < SIZE; j++)
 		{
-			data[i][j] = example[i][j];
-			for (int k = 0; k < SIZE; k++)
-				alldata[k][i][j] = example[i][j];
+			alldata[i][j] = example[i][j];
 		}
 	}
 }
