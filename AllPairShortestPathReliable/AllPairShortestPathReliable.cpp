@@ -3,9 +3,9 @@
 #include <time.h>
 #include <string.h>
 
-#define PATH "C:\\Users\\Eucliwood\\Desktop\\stat(SaveMode)\\Sequential\\"
+#define PATH "C:\\Users\\Eucliwood\\Desktop\\stat(SaveMode)\\Sequential\\Floyd\\Reliable\\"
 #define INF 999999
-#define SIZE 8
+#define SIZE 500
 
 void distance_generate(int[][SIZE]);
 void distance_useexample(int[][SIZE]);
@@ -34,35 +34,33 @@ int main()
 				allpath[0][i][j] = j;
 
 	//generate data
-	distance_useexample(alldistance[0]);
+	//distance_useexample(alldistance[0]);
 	//alldistance[0][1][5] = INF;
-	//distance_generate(distance);
+	distance_generate(alldistance[0]);
 
 	//Find Shortest Path
 	find_AllPairShortestPath(alldistance, allpath);
 
 	end = clock();
 
-	//fix_path(alldistance, allpath, 1 ,5);
-
 	//Print ShortestDistance
-	printf("Shortest Distance\n");
+	/*printf("Shortest Distance\n");
 	array_print(alldistance[SIZE-1]);
-	printf("\n");
+	printf("\n");*/
 
 	//Print ShortestPath
-	printf("Shortest Path\n");
+	/*printf("Shortest Path\n");
 	array_print(allpath[SIZE-1]);
-	printf("\n");
+	printf("\n");*/
 
 	//find path
 	//find_path(allpath[SIZE-1], 1, 6);
 
 
 	float diff = ((float)(end - start) / 1000000.0F) * 1000;
-	printf("%.4f\n", diff);
+	printf("%.10f\n", diff);
 
-	//log_save(diff);
+	log_save(diff);
 	
 
 	getchar();
@@ -161,9 +159,10 @@ void find_AllPairShortestPath(int alldistance[][SIZE][SIZE], int allpath[][SIZE]
 			array_copy(alldistance[k], alldistance[k + 1]);
 			array_copy(allpath[k], allpath[k + 1]);
 		}
-		printf("k = %d\n", k);
-		array_print(alldistance[k]);
-		printf("\n");
+		/*printf("k = %d\n", k);
+		//array_print(alldistance[k]);
+		array_print(allpath[k]);
+		printf("\n");*/
 	}
 }
 
@@ -237,9 +236,6 @@ void distance_useexample(int alldata[][SIZE])
 
 void find_path(int shortestpath[][SIZE], int u, int v)
 {
-	if (shortestpath[u][v] == NULL)
-		printf("[]");
-
 	printf("[%d]", u);
 	while (u != v) {
 		u = shortestpath[u][v];
@@ -255,6 +251,6 @@ void log_save(float diff)
 	sprintf(fileName, "%d.txt", SIZE);
 	strcat(filePath, fileName);
 	fp = fopen(filePath, "a");
-	fprintf(fp, "%.4f\n", diff);
+	fprintf(fp, "%.10f\n", diff);
 	fclose(fp);
 }
